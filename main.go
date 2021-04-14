@@ -52,7 +52,7 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		var posts []models.Post
 
 		posts, err = models.AllPosts(env.db)
@@ -72,7 +72,7 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-	case "POST":
+	case http.MethodPost:
 		if r.Header.Get("Content-Type") == "application/json" {
 			var post models.Post
 
