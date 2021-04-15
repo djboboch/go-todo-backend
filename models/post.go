@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+
 	_ "github.com/lib/pq"
 )
 
@@ -16,6 +17,7 @@ const (
 	ErrorMissingBody   = "missing TODO body test"
 	InsertStatement    = "INSERT INTO todo_post(header, body) VALUES ($1, $2)"
 	SelectAllStatement = "SELECT header, body FROM todo_post"
+	DeleteStatement    = "DELETE FROM todo_post WHERE id = $1"
 )
 
 func CreatePost(db *sql.DB, p Post) error {
@@ -63,4 +65,16 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	}
 
 	return posts, nil
+}
+
+func DeletePost(db *sql.DB, id string) error {
+	var err error
+
+	_, err = db.Exec(DeleteStatement, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
