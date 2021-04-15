@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/djboboch/go-todo/models"
-	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/djboboch/go-todo/models"
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -99,6 +100,23 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnsupportedMediaType)
 			w.Write([]byte("415 - unsupported media type. Please send JSON"))
 		}
+	case http.MethodDelete:
+		queryParams := r.URL.Query()
+
+		v, ok := queryParams["id"]
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("400 bad request - please provide query argument"))
+		}
+
+		err = models.DeletePost(env.db, v[0])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Post Deleted"))
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
