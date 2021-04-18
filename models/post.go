@@ -8,6 +8,7 @@ import (
 )
 
 type Post struct {
+	Id     string `json:"id"`
 	Header string `db:"header" json:"header"`
 	Body   string `db:"body" json:"body"`
 }
@@ -16,7 +17,7 @@ const (
 	ErrorMissingHeader = "missing TODO header test"
 	ErrorMissingBody   = "missing TODO body test"
 	InsertStatement    = "INSERT INTO todo_post(header, body) VALUES ($1, $2)"
-	SelectAllStatement = "SELECT header, body FROM todo_post"
+	SelectAllStatement = "SELECT id, header, body FROM todo_post"
 	DeleteStatement    = "DELETE FROM todo_post WHERE id = $1"
 )
 
@@ -52,7 +53,7 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	for rows.Next() {
 		var post Post
 
-		err = rows.Scan(&post.Header, &post.Body)
+		err = rows.Scan(&post.Id, &post.Header, &post.Body)
 		if err != nil {
 			return nil, err
 		}
