@@ -1,12 +1,18 @@
 version: '3.9'
 
 services:
-#  go-dev:
-#    image: cosmtrek/air
-#    volumes:
-#    - .:/go/src/github.com/djboboch/go-todo
-#    ports:
-#    - 8000:8000
+  go:
+    build: .
+    ports:
+    - 8000:8000
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=golang
+      - DB_PASSWORD=password
+      - DB_NAME=testdb
   db:
     image: postgres
     ports:
