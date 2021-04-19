@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/djboboch/go-todo/models"
 	_ "github.com/lib/pq"
 )
 
-const (
+var (
 	host     = os.Getenv("DB_HOST")
 	port     = os.Getenv("DB_PORT")
 	user     = os.Getenv("DB_USER")
@@ -71,8 +72,6 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
-
-		w.WriteHeader(http.StatusOK)
 	case http.MethodPost:
 		if r.Header.Get("Content-Type") == "application/json" {
 			var post models.Post
