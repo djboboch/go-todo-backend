@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/djboboch/go-todo/models"
@@ -13,11 +14,11 @@ import (
 )
 
 const (
-	host     = "localhost"
-	port     = 5432
-	user     = "golang"
-	password = "password"
-	dbname   = "testdb"
+	host     = os.Getenv("DB_HOST")
+	port     = os.Getenv("DB_PORT")
+	user     = os.Getenv("DB_USER")
+	password = os.Getenv("DB_PASSWORD")
+	dbname   = os.Getenv("DB_NAME")
 )
 
 type Env struct {
