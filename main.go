@@ -28,15 +28,23 @@ type Env struct {
 
 func main() {
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
+	for retryCount := 30; retryCount >= 0; retryCount-- {
+		err = db.Ping()
+		if err != nil {
+			if retryCount == 0 {
+				log.Fatalf("Not able to establish a connection to the database at %v", psqlInfo)
+			}
+			fmt.Println("Could not connect to DB")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
 	}
 
 	env := &Env{
