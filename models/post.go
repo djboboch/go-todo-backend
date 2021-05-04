@@ -68,6 +68,7 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	return posts, nil
 }
 
+//DeletePost deletes the post with the passed in ID
 func DeletePost(db *sql.DB, id string) error {
 	var err error
 
