@@ -60,76 +60,83 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/api/v1/todo/{id:[0-9]+}", env.todoHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions)
+	apiV1 := r.PathPrefix("/api/v1").Subrouter()
+
+	apiV1.HandleFunc("/todo", env.getPost).Methods(http.MethodGet, http.MethodOptions)
+
+	apiV1.HandleFunc("/todo", env.createPost).Methods(http.MethodPost)
+
+	apiV1.HandleFunc("/todo/{id}", env.todoHandler).Methods(http.MethodDelete, http.MethodPut)
 
 	r.Use(mux.CORSMethodMiddleware(r))
+	r.Use(CorsMiddleware)
 
 	log.Fatal(http.ListenAndServe(":8000", r))
 }
 
-func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
+func (env *Env) getPost(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var posts []models.Post
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	posts, err = models.AllPosts(env.db)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(posts)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+}
+
+func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	if r.Header.Get("Content-Type") == "application/json" {
+		var createPostRequest CreatePostItemRequest
+
+		err = json.NewDecoder(r.Body).Decode(&createPostRequest)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(strings.Join([]string{"500 Internal server error -", err.Error()}, " ")))
+		}
+
+		err = models.CreatePost(env.db, createPostRequest.Content)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+		}
+
+		fmt.Printf("Created new post with content: %+v into DB", createPostRequest.Content)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Post Created"))
+
+	} else {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		w.Write([]byte("415 - unsupported media type. Please send JSON"))
+	}
+}
+
+func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
 	switch r.Method {
-	case http.MethodGet:
-		var posts []models.Post
-
-		posts, err = models.AllPosts(env.db)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(posts)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
-			return
-		}
-	case http.MethodPost:
-		if r.Header.Get("Content-Type") == "application/json" {
-			var createPostRequest CreatePostItemRequest
-
-			err = json.NewDecoder(r.Body).Decode(&createPostRequest)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(strings.Join([]string{"500 Internal server error -", err.Error()}, " ")))
-			}
-
-			err = models.CreatePost(env.db, createPostRequest.Content)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				w.Write([]byte(err.Error()))
-			}
-
-			fmt.Printf("Created new post with content: %+v into DB", createPostRequest.Content)
-
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Post Created"))
-
-		} else {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
-			w.Write([]byte("415 - unsupported media type. Please send JSON"))
-		}
 	case http.MethodDelete:
-		queryParams := r.URL.Query()
 
-		v, ok := queryParams["id"]
-		if !ok {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("400 bad request - please provide query argument"))
-		}
+		vars := mux.Vars(r)
 
-		err = models.DeletePost(env.db, v[0])
+		err = models.DeletePost(env.db, vars["id"])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -143,4 +150,12 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("405 - Method not allowed"))
 	}
+}
+
+func CorsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		next.ServeHTTP(w, r)
+	})
 }
