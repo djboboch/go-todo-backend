@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +25,10 @@ var (
 
 type Env struct {
 	db *sql.DB
+}
+
+type CreatePostItemRequest struct {
+	Content string `json:"content"`
 }
 
 func main() {
@@ -53,12 +58,19 @@ func main() {
 
 	fmt.Println("Successfully connected!")
 
-	http.HandleFunc("/api/v1/todo", env.todoHandler)
+	r := mux.NewRouter()
 
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	r.HandleFunc("/api/v1/todo/{id:[0-9]+}", env.todoHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodOptions)
+
+	r.Use(mux.CORSMethodMiddleware(r))
+
+	log.Fatal(http.ListenAndServe(":8000", r))
 }
 
 func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	var err error
 
 	switch r.Method {
@@ -72,7 +84,8 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(err.Error()))
 			return
 		}
-
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(posts)
 		if err != nil {
 			log.Println(err)
@@ -82,23 +95,23 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	case http.MethodPost:
 		if r.Header.Get("Content-Type") == "application/json" {
-			var post models.Post
+			var createPostRequest CreatePostItemRequest
 
-			err = json.NewDecoder(r.Body).Decode(&post)
+			err = json.NewDecoder(r.Body).Decode(&createPostRequest)
 			if err != nil {
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(strings.Join([]string{"500 Internal server error -", err.Error()}, " ")))
 			}
 
-			err = models.CreatePost(env.db, post)
+			err = models.CreatePost(env.db, createPostRequest.Content)
 			if err != nil {
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				w.Write([]byte(err.Error()))
 			}
 
-			fmt.Printf("Inserted %+v into DB", post)
+			fmt.Printf("Created new post with content: %+v into DB", createPostRequest.Content)
 
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("Post Created"))
@@ -124,7 +137,8 @@ func (env *Env) todoHandler(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Post Deleted"))
-
+	case http.MethodOptions:
+		return
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("405 - Method not allowed"))
