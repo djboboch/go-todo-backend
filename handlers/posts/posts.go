@@ -72,6 +72,36 @@ func Create(env *handlers.Env) http.HandlerFunc {
 	}
 }
 
+func Update(env *handlers.Env) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var post models.Post
+		var err error
+
+		if r.Header.Get("Content-Type") == "application/json" {
+			err = json.NewDecoder(r.Body).Decode(&post)
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(strings.Join([]string{"500 Internal server error -", err.Error()}, " ")))
+			}
+
+			err = models.UpdatePost(env.DB, post)
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(err.Error()))
+			}
+
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("Post Updated"))
+
+		} else {
+			w.WriteHeader(http.StatusUnsupportedMediaType)
+			w.Write([]byte("415 - unsupported media type. Please send JSON"))
+		}
+	}
+}
+
 func Delete(env *handlers.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

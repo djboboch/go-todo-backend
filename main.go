@@ -57,6 +57,8 @@ func main() {
 
 	apiV1.HandleFunc("/todo", posts.Create(env)).Methods(http.MethodPost)
 
+	apiV1.HandleFunc("/todo", posts.Update(env)).Methods(http.MethodPut)
+
 	apiV1.HandleFunc("/todo/{id}", posts.Delete(env)).Methods(http.MethodDelete)
 
 	r.Use(mux.CORSMethodMiddleware(r))

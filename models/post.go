@@ -16,9 +16,10 @@ type Post struct {
 
 const (
 	ErrorMissingContent = "missing TODO content text"
-	InsertStatement     = "INSERT INTO post_item(id, content) VALUES ($1, $2)"
-	SelectAllStatement  = "SELECT id, content, isItemFinished FROM post_item"
-	DeleteStatement     = "DELETE FROM post_item WHERE id = $1"
+	InsertStatement     = "INSERT INTO post_item(id, content) VALUES ($1, $2);"
+	SelectAllStatement  = "SELECT id, content, isItemFinished FROM post_item;"
+	UpdateStatement     = "UPDATE post_item SET content = $2, isItemFinished = $3 WHERE id = $1;"
+	DeleteStatement     = "DELETE FROM post_item WHERE id = $1;"
 )
 
 func CreatePost(db *sql.DB, content string) error {
@@ -63,6 +64,18 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	}
 
 	return posts, nil
+}
+
+func UpdatePost(db *sql.DB, post Post) error {
+	var err error
+
+	_, err = db.Exec(UpdateStatement, post.Id, post.Content, post.IsItemFinished)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //DeletePost deletes the post with the passed in ID
