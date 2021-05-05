@@ -3,35 +3,32 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"github.com/segmentio/ksuid"
 
 	_ "github.com/lib/pq"
 )
 
 type Post struct {
-	Id     string `json:"id"`
-	Header string `db:"header" json:"header"`
-	Body   string `db:"body" json:"body"`
+	Id             string `json:"id"`
+	Content        string `db:"content" json:"content"`
+	IsItemFinished bool   `db:"isItemFinished" json:"is_item_finished"`
 }
 
 const (
-	ErrorMissingHeader = "missing TODO header test"
-	ErrorMissingBody   = "missing TODO body test"
-	InsertStatement    = "INSERT INTO todo_post(header, body) VALUES ($1, $2)"
-	SelectAllStatement = "SELECT id, header, body FROM todo_post"
-	DeleteStatement    = "DELETE FROM todo_post WHERE id = $1"
+	ErrorMissingContent = "missing TODO content text"
+	InsertStatement     = "INSERT INTO post_item(id, content) VALUES ($1, $2)"
+	SelectAllStatement  = "SELECT id, content, isItemFinished FROM post_item"
+	DeleteStatement     = "DELETE FROM post_item WHERE id = $1"
 )
 
-func CreatePost(db *sql.DB, p Post) error {
+func CreatePost(db *sql.DB, content string) error {
 	var err error
-	if p.Header == "" {
-		return errors.New(ErrorMissingHeader)
+
+	if content == "" {
+		return errors.New(ErrorMissingContent)
 	}
 
-	if p.Body == "" {
-		return errors.New(ErrorMissingBody)
-	}
-
-	_, err = db.Exec(InsertStatement, p.Header, p.Body)
+	_, err = db.Exec(InsertStatement, ksuid.New().String(), content)
 	if err != nil {
 		return err
 	}
@@ -53,7 +50,7 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	for rows.Next() {
 		var post Post
 
-		err = rows.Scan(&post.Id, &post.Header, &post.Body)
+		err = rows.Scan(&post.Id, &post.Content, &post.IsItemFinished)
 		if err != nil {
 			return nil, err
 		}
