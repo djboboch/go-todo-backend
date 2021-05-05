@@ -6,6 +6,7 @@ import (
 	"github.com/djboboch/go-todo/handlers"
 	"github.com/djboboch/go-todo/handlers/posts"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
@@ -53,7 +54,7 @@ func main() {
 
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
-	apiV1.HandleFunc("/todo", posts.Get(env)).Methods(http.MethodGet, http.MethodOptions)
+	apiV1.HandleFunc("/todo", posts.Get(env)).Methods(http.MethodGet)
 
 	apiV1.HandleFunc("/todo", posts.Create(env)).Methods(http.MethodPost)
 
@@ -61,16 +62,10 @@ func main() {
 
 	apiV1.HandleFunc("/todo/{id}", posts.Delete(env)).Methods(http.MethodDelete)
 
-	r.Use(mux.CORSMethodMiddleware(r))
-	r.Use(CorsMiddleware)
-
-	log.Fatal(http.ListenAndServe(":8000", r))
-}
-
-func CorsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-
-		next.ServeHTTP(w, r)
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 	})
+
+	log.Fatal(http.ListenAndServe(":8000", c.Handler(r)))
 }
