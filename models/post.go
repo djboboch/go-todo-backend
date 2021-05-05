@@ -11,7 +11,7 @@ import (
 type Post struct {
 	Id             string `json:"id"`
 	Content        string `db:"content" json:"content"`
-	IsItemFinished bool   `db:"isItemFinished" json:"is_item_finished"`
+	IsItemFinished bool   `db:"isItemFinished" json:"isItemFinished"`
 }
 
 const (
