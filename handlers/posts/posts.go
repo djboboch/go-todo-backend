@@ -2,7 +2,6 @@ package posts
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/djboboch/go-todo/handlers"
 	"github.com/djboboch/go-todo/models"
 	"github.com/djboboch/go-todo/pkg/responses"
@@ -34,16 +33,27 @@ func Get(env *handlers.Env) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(posts)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
+		if len(posts) == 0 {
 			json.NewEncoder(w).Encode(responses.ServerResponse{
-				Status:  responses.ErrorResponseStatus,
-				Content: err.Error(),
+				Status:  responses.SuccessResponseStatus,
+				Content: "You have no todo",
 			})
-
 			return
+		} else {
+			err = json.NewEncoder(w).Encode(responses.ServerResponse{
+				Status:  responses.SuccessResponseStatus,
+				Content: posts,
+			})
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(responses.ServerResponse{
+					Status:  responses.ErrorResponseStatus,
+					Content: err.Error(),
+				})
+
+				return
+			}
 		}
 	}
 }
@@ -51,6 +61,7 @@ func Get(env *handlers.Env) http.HandlerFunc {
 func Create(env *handlers.Env) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
+		var post *models.Post
 
 		var createPostRequest CreatePostItemRequest
 
@@ -77,8 +88,7 @@ func Create(env *handlers.Env) http.HandlerFunc {
 			return
 		}
 
-		err = models.CreatePost(env.DB, createPostRequest.Content)
-
+		post, err = models.CreatePost(env.DB, createPostRequest.Content)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -90,12 +100,10 @@ func Create(env *handlers.Env) http.HandlerFunc {
 			return
 		}
 
-		fmt.Printf("Created new post with content: %+v into DB", createPostRequest.Content)
-
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(responses.ServerResponse{
 			Status:  responses.SuccessResponseStatus,
-			Content: "Post Created",
+			Content: &post,
 		})
 
 		if err != nil {
