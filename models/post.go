@@ -22,19 +22,25 @@ const (
 	DeleteStatement     = "DELETE FROM post_item WHERE id = $1;"
 )
 
-func CreatePost(db *sql.DB, content string) error {
+func CreatePost(db *sql.DB, content string) (*Post, error) {
 	var err error
 
 	if content == "" {
-		return errors.New(ErrorMissingContent)
+		return nil, errors.New(ErrorMissingContent)
 	}
 
-	_, err = db.Exec(InsertStatement, ksuid.New().String(), content)
+	post := Post{
+		Id:             ksuid.New().String(),
+		Content:        content,
+		IsItemFinished: false,
+	}
+
+	_, err = db.Exec(InsertStatement, post.Id, post.Content)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &post, nil
 }
 
 func AllPosts(db *sql.DB) ([]Post, error) {
