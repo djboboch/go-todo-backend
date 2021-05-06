@@ -62,10 +62,20 @@ func main() {
 
 	apiV1.HandleFunc("/todo/{id}", posts.Delete(env)).Methods(http.MethodDelete)
 
+	r.Use(SetJSONContentType)
+
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
 	})
 
 	log.Fatal(http.ListenAndServe(":8000", c.Handler(r)))
+}
+
+func SetJSONContentType(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
+		next.ServeHTTP(w, r)
+	})
 }
