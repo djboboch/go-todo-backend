@@ -2,24 +2,24 @@ package posts
 
 import (
 	"encoding/json"
-	"github.com/djboboch/go-todo/handlers"
+	"github.com/djboboch/go-todo/internal/http/requests"
+	"github.com/djboboch/go-todo/internal/http/responses"
 	"github.com/djboboch/go-todo/models"
-	"github.com/djboboch/go-todo/pkg/responses"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 )
 
-type CreatePostItemRequest struct {
-	Content string `json:"content"`
+type Env struct {
+	Post models.PostModel
 }
 
-func Get(env *handlers.Env) http.HandlerFunc {
+func (env *Env) GetPosts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		var posts []models.Post
 
-		posts, err = models.AllPosts(env.DB)
+		posts, err = env.Post.All()
 
 		if err != nil {
 			log.Println(err)
@@ -58,12 +58,12 @@ func Get(env *handlers.Env) http.HandlerFunc {
 	}
 }
 
-func Create(env *handlers.Env) http.HandlerFunc {
+func (env *Env) CreatePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 		var post *models.Post
 
-		var createPostRequest CreatePostItemRequest
+		var createPostRequest requests.CreatePostItem
 
 		if r.Header.Get("Content-Type") != "application/json" {
 			w.WriteHeader(http.StatusUnsupportedMediaType)
@@ -88,7 +88,7 @@ func Create(env *handlers.Env) http.HandlerFunc {
 			return
 		}
 
-		post, err = models.CreatePost(env.DB, createPostRequest.Content)
+		post, err = env.Post.Create(createPostRequest.Content)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -118,7 +118,7 @@ func Create(env *handlers.Env) http.HandlerFunc {
 	}
 }
 
-func Update(env *handlers.Env) http.HandlerFunc {
+func (env *Env) UpdatePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var post models.Post
 		var err error
@@ -144,7 +144,7 @@ func Update(env *handlers.Env) http.HandlerFunc {
 			return
 		}
 
-		err = models.UpdatePost(env.DB, post)
+		err = env.Post.Update(post)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
@@ -163,14 +163,14 @@ func Update(env *handlers.Env) http.HandlerFunc {
 	}
 }
 
-func Delete(env *handlers.Env) http.HandlerFunc {
+func (env *Env) DeletePost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var err error
 
 		vars := mux.Vars(r)
 
-		err = models.DeletePost(env.DB, vars["id"])
+		err = env.Post.Delete(vars["id"])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
