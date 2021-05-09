@@ -14,6 +14,10 @@ type Post struct {
 	IsItemFinished bool   `db:"isItemFinished" json:"isItemFinished"`
 }
 
+type PostModel struct {
+	DB *sql.DB
+}
+
 const (
 	ErrorMissingContent = "missing TODO content text"
 	InsertStatement     = "INSERT INTO post_item(id, content) VALUES ($1, $2);"
@@ -22,7 +26,7 @@ const (
 	DeleteStatement     = "DELETE FROM post_item WHERE id = $1;"
 )
 
-func CreatePost(db *sql.DB, content string) (*Post, error) {
+func (m PostModel) Create(content string) (*Post, error) {
 	var err error
 
 	if content == "" {
@@ -35,7 +39,7 @@ func CreatePost(db *sql.DB, content string) (*Post, error) {
 		IsItemFinished: false,
 	}
 
-	_, err = db.Exec(InsertStatement, post.Id, post.Content)
+	_, err = m.DB.Exec(InsertStatement, post.Id, post.Content)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +47,10 @@ func CreatePost(db *sql.DB, content string) (*Post, error) {
 	return &post, nil
 }
 
-func AllPosts(db *sql.DB) ([]Post, error) {
+func (m PostModel) All() ([]Post, error) {
 	var err error
 
-	rows, err := db.Query(SelectAllStatement)
+	rows, err := m.DB.Query(SelectAllStatement)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +76,10 @@ func AllPosts(db *sql.DB) ([]Post, error) {
 	return posts, nil
 }
 
-func UpdatePost(db *sql.DB, post Post) error {
+func (m PostModel) UpdatePost(post Post) error {
 	var err error
 
-	_, err = db.Exec(UpdateStatement, post.Id, post.Content, post.IsItemFinished)
+	_, err = m.DB.Exec(UpdateStatement, post.Id, post.Content, post.IsItemFinished)
 
 	if err != nil {
 		return err
@@ -85,10 +89,10 @@ func UpdatePost(db *sql.DB, post Post) error {
 }
 
 //DeletePost deletes the post with the passed in ID
-func DeletePost(db *sql.DB, id string) error {
+func (m PostModel) DeletePost(id string) error {
 	var err error
 
-	_, err = db.Exec(DeleteStatement, id)
+	_, err = m.DB.Exec(DeleteStatement, id)
 
 	if err != nil {
 		return err
