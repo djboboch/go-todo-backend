@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"github.com/djboboch/go-todo/handlers"
 	"github.com/djboboch/go-todo/handlers/posts"
+	"github.com/djboboch/go-todo/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"log"
@@ -44,8 +44,8 @@ func main() {
 		break
 	}
 
-	env := &handlers.Env{
-		DB: db,
+	env := &posts.Env{
+		Post: models.PostModel{DB: db},
 	}
 
 	fmt.Println("Successfully connected!")
@@ -54,13 +54,13 @@ func main() {
 
 	apiV1 := r.PathPrefix("/api/v1").Subrouter()
 
-	apiV1.HandleFunc("/todo", posts.Get(env)).Methods(http.MethodGet)
+	apiV1.HandleFunc("/todo", env.GetPosts()).Methods(http.MethodGet)
 
-	apiV1.HandleFunc("/todo", posts.Create(env)).Methods(http.MethodPost)
+	apiV1.HandleFunc("/todo", env.CreatePost()).Methods(http.MethodPost)
 
-	apiV1.HandleFunc("/todo", posts.Update(env)).Methods(http.MethodPut)
+	apiV1.HandleFunc("/todo", env.UpdatePost()).Methods(http.MethodPut)
 
-	apiV1.HandleFunc("/todo/{id}", posts.Delete(env)).Methods(http.MethodDelete)
+	apiV1.HandleFunc("/todo/{id}", env.DeletePost()).Methods(http.MethodDelete)
 
 	r.Use(SetJSONContentType)
 
