@@ -76,7 +76,7 @@ func (m PostModel) All() ([]Post, error) {
 	return posts, nil
 }
 
-func (m PostModel) UpdatePost(post Post) error {
+func (m PostModel) Update(post Post) error {
 	var err error
 
 	_, err = m.DB.Exec(UpdateStatement, post.Id, post.Content, post.IsItemFinished)
@@ -88,8 +88,8 @@ func (m PostModel) UpdatePost(post Post) error {
 	return nil
 }
 
-//DeletePost deletes the post with the passed in ID
-func (m PostModel) DeletePost(id string) error {
+//Delete deletes the post with the passed in ID
+func (m PostModel) Delete(id string) error {
 	var err error
 
 	_, err = m.DB.Exec(DeleteStatement, id)
