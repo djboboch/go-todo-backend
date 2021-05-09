@@ -45,7 +45,9 @@ func main() {
 	}
 
 	env := &posts.Env{
-		Post: models.PostModel{DB: db},
+		Posts: models.PostModel{
+			DB: db,
+		},
 	}
 
 	fmt.Println("Successfully connected!")
