@@ -11,7 +11,12 @@ import (
 )
 
 type Env struct {
-	Post models.PostModel
+	Posts interface {
+		All() ([]models.Post, error)
+		Create(content string) (*models.Post, error)
+		Update(post models.Post) error
+		Delete(id string) error
+	}
 }
 
 func (env *Env) GetPosts() http.HandlerFunc {
@@ -19,7 +24,7 @@ func (env *Env) GetPosts() http.HandlerFunc {
 		var err error
 		var posts []models.Post
 
-		posts, err = env.Post.All()
+		posts, err = env.Posts.All()
 
 		if err != nil {
 			log.Println(err)
@@ -88,7 +93,7 @@ func (env *Env) CreatePost() http.HandlerFunc {
 			return
 		}
 
-		post, err = env.Post.Create(createPostRequest.Content)
+		post, err = env.Posts.Create(createPostRequest.Content)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -144,7 +149,7 @@ func (env *Env) UpdatePost() http.HandlerFunc {
 			return
 		}
 
-		err = env.Post.Update(post)
+		err = env.Posts.Update(post)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
@@ -170,7 +175,7 @@ func (env *Env) DeletePost() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 
-		err = env.Post.Delete(vars["id"])
+		err = env.Posts.Delete(vars["id"])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
