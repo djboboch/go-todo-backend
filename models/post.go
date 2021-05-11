@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/segmentio/ksuid"
 
 	_ "github.com/lib/pq"
@@ -18,20 +17,22 @@ type PostModel struct {
 	DB *sql.DB
 }
 
+type Posts interface {
+	All() ([]Post, error)
+	Create(content string) (*Post, error)
+	Update(post Post) error
+	Delete(id string) error
+}
+
 const (
-	ErrorMissingContent = "missing TODO content text"
-	InsertStatement     = "INSERT INTO post_item(id, content) VALUES ($1, $2);"
-	SelectAllStatement  = "SELECT id, content, isItemFinished FROM post_item;"
-	UpdateStatement     = "UPDATE post_item SET content = $2, isItemFinished = $3 WHERE id = $1;"
-	DeleteStatement     = "DELETE FROM post_item WHERE id = $1;"
+	InsertStatement    = "INSERT INTO post_item(id, content) VALUES ($1, $2);"
+	SelectAllStatement = "SELECT id, content, isItemFinished FROM post_item;"
+	UpdateStatement    = "UPDATE post_item SET content = $2, isItemFinished = $3 WHERE id = $1;"
+	DeleteStatement    = "DELETE FROM post_item WHERE id = $1;"
 )
 
 func (m PostModel) Create(content string) (*Post, error) {
 	var err error
-
-	if content == "" {
-		return nil, errors.New(ErrorMissingContent)
-	}
 
 	post := Post{
 		Id:             ksuid.New().String(),
