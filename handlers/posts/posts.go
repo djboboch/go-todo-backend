@@ -11,12 +11,7 @@ import (
 )
 
 type Env struct {
-	Posts interface {
-		All() ([]models.Post, error)
-		Create(content string) (*models.Post, error)
-		Update(post models.Post) error
-		Delete(id string) error
-	}
+	models.Posts
 }
 
 func (env *Env) GetPosts() http.HandlerFunc {
@@ -27,7 +22,6 @@ func (env *Env) GetPosts() http.HandlerFunc {
 		posts, err = env.Posts.All()
 
 		if err != nil {
-			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
 				Status:  responses.ErrorResponseStatus,
@@ -83,11 +77,20 @@ func (env *Env) CreatePost() http.HandlerFunc {
 		err = json.NewDecoder(r.Body).Decode(&createPostRequest)
 
 		if err != nil {
-			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(responses.ServerResponse{
 				Status:  responses.ErrorResponseStatus,
 				Content: err.Error(),
+			})
+
+			return
+		}
+
+		if createPostRequest.Content == "" {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(responses.ServerResponse{
+				Status:  responses.ErrorResponseStatus,
+				Content: "Missing post content data",
 			})
 
 			return
@@ -105,7 +108,7 @@ func (env *Env) CreatePost() http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(responses.ServerResponse{
 			Status:  responses.SuccessResponseStatus,
 			Content: &post,
