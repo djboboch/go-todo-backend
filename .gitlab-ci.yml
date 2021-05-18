@@ -1,0 +1,65 @@
+stages:
+  - build
+  - deploy
+
+image: docker:19-dind
+services:
+  - name: docker:19-dind
+    command: ["--tls=false"]
+
+variables:
+  APP_NAME: go-todo-backend
+  CD_GIT_REPO: git@gitlab.com:chrupek.tech/go-todo/deployment.git
+  CD_CHART_DIRECTORY: deployment/go-todo/backend
+  CD_MANIFEST_FILE: Chart.yaml
+  IMAGE_TAG: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+after_script:
+  - docker image prune -af
+
+build_image:
+  stage: build
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:latest || true
+    - >
+      docker build
+      --cache-from $CI_REGISTRY_IMAGE:latest
+      --tag $CI_REGISTRY_IMAGE:$IMAGE_TAG
+      .
+    - docker push $CI_REGISTRY_IMAGE:$IMAGE_TAG
+
+tag_latest_image:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG
+    - docker tag $CI_REGISTRY_IMAGE:$IMAGE_TAG $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+update_manifest:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  retry: 2
+  script:
+    # Add SSH key to root
+    - mkdir -p /root/.ssh
+    - echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa
+    - ssh-keyscan -H gitlab.com > /root/.ssh/known_hosts
+    - chmod 600 /root/.ssh/id_rsa
+    # Git
+    - apk add --no-cache git
+    - git config --global user.name $APP_NAME
+    - git config --global user.email $APP_NAME"@gitlab.com"
+    - git clone --single-branch --branch master $CD_GIT_REPO
+    - cd $CD_CHART_DIRECTORY
+    # Helm
+    - >
+      docker run --rm -v ${PWD}:/workdir mikefarah/yq:3.2.1 yq write
+      --inplace --verbose $CD_MANIFEST_FILE appVersion $IMAGE_TAG
+    - git commit -am "update image tag" && git push origin master
