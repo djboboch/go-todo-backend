@@ -47,6 +47,10 @@ func (a *App) CreateRoutes() {
 		},
 	}
 
+	a.Router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	apiV1 := a.Router.PathPrefix("/api/v1").Subrouter()
 
 	apiV1.HandleFunc("/todo", env.GetPosts()).Methods(http.MethodGet)
