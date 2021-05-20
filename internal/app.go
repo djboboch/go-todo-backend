@@ -2,9 +2,8 @@ package internal
 
 import (
 	"database/sql"
-	"github.com/djboboch/go-todo/handlers/posts"
+	"fmt"
 	"github.com/djboboch/go-todo/internal/http/middleware"
-	"github.com/djboboch/go-todo/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"log"
@@ -27,39 +26,40 @@ type App struct {
 
 func (a *App) Initialize() {
 
-	var err error
+	//var err error
 
-	a.DB, err = createConnectionPool()
+	//a.DB, err = createConnectionPool()
 	a.Router = createRouter()
 
-	if err != nil {
-		panic(err)
-	}
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	return
 }
 
 func (a *App) CreateRoutes() {
 
-	env := &posts.Env{
-		Posts: models.PostModel{
-			DB: a.DB,
-		},
-	}
+	//env := &posts.Env{
+	//	Posts: models.PostModel{
+	//		DB: a.DB,
+	//	},
+	//}
 
 	a.Router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Route working")
 	})
 
-	apiV1 := a.Router.PathPrefix("/api/v1").Subrouter()
-
-	apiV1.HandleFunc("/todo", env.GetPosts()).Methods(http.MethodGet)
-
-	apiV1.HandleFunc("/todo", env.CreatePost()).Methods(http.MethodPost)
-
-	apiV1.HandleFunc("/todo", env.UpdatePost()).Methods(http.MethodPut)
-
-	apiV1.HandleFunc("/todo/{id}", env.DeletePost()).Methods(http.MethodDelete)
+	//apiV1 := a.Router.PathPrefix("/api/v1").Subrouter()
+	//
+	//apiV1.HandleFunc("/todo", env.GetPosts()).Methods(http.MethodGet)
+	//
+	//apiV1.HandleFunc("/todo", env.CreatePost()).Methods(http.MethodPost)
+	//
+	//apiV1.HandleFunc("/todo", env.UpdatePost()).Methods(http.MethodPut)
+	//
+	//apiV1.HandleFunc("/todo/{id}", env.DeletePost()).Methods(http.MethodDelete)
 
 }
 

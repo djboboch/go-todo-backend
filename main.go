@@ -10,6 +10,6 @@ func main() {
 	a := internal.App{}
 	a.Initialize()
 	a.CreateRoutes()
-	a.AddMiddleware()
+	//a.AddMiddleware()
 	a.Run()
 }
