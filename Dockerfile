@@ -16,6 +16,9 @@ RUN cp /build/main .
 
 FROM alpine
 
-COPY --from=build-env /dist/main .
-
+RUN mkdir /app
+COPY --from=build-env /dist/main /app
+WORKDIR /app
 ENTRYPOINT ["./main"]
+
+EXPOSE 8000
